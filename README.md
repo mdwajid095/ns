@@ -16,6 +16,7 @@ sudo chmod -x ns
 3. Set the PATH:
 ```bash
 sudo mv ns /usr/local/bin
+source ~/.bashrc
 ```
 ## Example
 
