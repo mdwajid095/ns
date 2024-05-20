@@ -1,0 +1,49 @@
+#!/bin/bash
+
+# Define some colors for better visibility
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Function to list clusters
+list_clusters() {
+    echo -e "${GREEN}Clusters in VM $(hostname -i):${NC}"
+    kubectl config get-contexts -o name | cat -n
+}
+
+# Function to list namespaces
+list_namespaces() {
+    local cluster=$1
+    kubectl config use-context "${cluster}"
+    echo -e "${BLUE}Namespaces in ${cluster}:${NC}"
+    kubectl get namespaces -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | cat -n
+    echo
+}
+
+# Function to set namespace
+set_namespace() {
+    local cluster=$1
+    local namespace=$2
+
+    # Set the context to the desired cluster
+    kubectl config use-context "${cluster}"
+
+    # Set the namespace
+    kubectl config set-context --current --namespace="${namespace}"
+
+    echo -e "${RED}Namespace has been set to ${namespace} in ${cluster}${NC}"
+}
+
+# Main script
+list_clusters
+read -rp "Enter the number of the cluster to be set: " cluster_number
+cluster_number=${cluster_number:-1}
+cluster=$(kubectl config get-contexts -o name | sed -n "${cluster_number}p")
+
+list_namespaces "${cluster}"
+read -rp "Enter the number of the namespace to be set: " namespace_number
+namespace_number=${namespace_number:-1}
+namespace=$(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | sed -n "${namespace_number}p")
+
+set_namespace "${cluster}" "${namespace}"
