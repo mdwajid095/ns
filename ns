@@ -35,15 +35,62 @@ set_namespace() {
     echo -e "${RED}Namespace has been set to ${namespace} in ${cluster}${NC}"
 }
 
+# Function to show current namespace
+show_current_namespace() {
+    current_ns=$(kubectl config view --minify --output 'jsonpath={..namespace}')
+    echo -e "${GREEN}Current namespace is ${current_ns} ${NC}"
+}
+
+# Function to show help
+show_help() {
+  local SELF="ns"
+  cat <<EOF
+
+	USAGE:
+	   $SELF                    : Set namespace across cluster
+	   $SELF -c,--current       : Show current namespace
+	   $SELF -h,--help          : Show help
+
+EOF
+}
+
 # Main script
-list_clusters
-read -rp "Enter the number of the cluster to be set: " cluster_number
-cluster_number=${cluster_number:-1}
-cluster=$(kubectl config get-contexts -o name | sed -n "${cluster_number}p")
+if (( "$#" > 1 )); then
+  echo "Error: More than one flag provided" >&2
+  exit 1
+fi
 
-list_namespaces "${cluster}"
-read -rp "Enter the number of the namespace to be set: " namespace_number
-namespace_number=${namespace_number:-1}
-namespace=$(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | sed -n "${namespace_number}p")
+while (( "$#" )); do
+  case "$1" in
+    -c|--current)
+      show_current_namespace
+      exit 1
+      ;;
+    -h|--help)
+      show_help
+	  exit 1
+      ;;
+    -|.) # end argument parsing
+      shift
+      break
+      ;;
+    -*|.*) # unsupported flags
+      echo "Error: Unsupported flag $1" >&2
+      exit 1
+      ;;
+  esac
+done
 
-set_namespace "${cluster}" "${namespace}"
+if (( "$#" == 0 )); then
+  list_clusters
+  read -rp "Enter the number of the cluster to be set: " cluster_number
+  cluster_number=${cluster_number:-1}
+  cluster=$(kubectl config get-contexts -o name | sed -n "${cluster_number}p")
+
+  list_namespaces "${cluster}"
+  read -rp "Enter the number of the namespace to be set: " namespace_number
+  namespace_number=${namespace_number:-1}
+  namespace=$(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | sed -n "${namespace_number}p")
+
+  set_namespace "${cluster}" "${namespace}"
+fi
