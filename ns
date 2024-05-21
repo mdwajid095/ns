@@ -21,7 +21,7 @@ show_help() {
         ns: A dynamic Bash script enabling seamless navigation across Kubernetes namespaces and clusters interactively.
         USAGE:
            $SELF                    : Set namespace across multiple cluster
-	   $SELF <NAME>             : Set namespace within cluster
+           $SELF <NAME>             : Set namespace within cluster
            $SELF -c,--current       : Show current namespace
            $SELF -h,--help          : Show help
 
@@ -81,6 +81,19 @@ if_number(){
 }
 
 # Main script
+main() {
+
+if [[ -z "${KUBECTL:-}" ]]; then
+  if hash kubectl 2>/dev/null; then
+    KUBECTL=kubectl
+  elif hash kubectl.exe  2>/dev/null; then
+    KUBECTL=kubectl.exe
+  else
+    echo >&2 "kubectl is not installed"
+    exit 1
+  fi
+fi
+
 if (( "$#" > 1 )); then
   echo "Error: More than one flag provided" >&2
   exit 1
@@ -104,7 +117,7 @@ while (( "$#" )); do
       echo "Error: Unsupported flag $1" >&2
       exit 1
       ;;
-	*)
+        *)
       set_ns "$1"
       exit 1
       ;;
@@ -126,3 +139,6 @@ if (( "$#" == 0 )); then
 
   set_namespace "${cluster}" "${namespace}"
 fi
+}
+
+main "$@"
