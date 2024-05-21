@@ -1,4 +1,5 @@
 #!/bin/bash
+# Contributor: https://github.com/mdwajid095/ns
 
 # Define some colors for better visibility
 RED='\033[0;31m'
@@ -21,7 +22,7 @@ list_namespaces() {
     echo
 }
 
-# Function to set namespace
+# Function to set namespace across multiple cluster
 set_namespace() {
     local cluster=$1
     local namespace=$2
@@ -32,7 +33,19 @@ set_namespace() {
     # Set the namespace
     kubectl config set-context --current --namespace="${namespace}"
 
-    echo -e "${RED}Namespace has been set to ${namespace} in ${cluster}${NC}"
+    echo -e "${RED}Namespace has been set to '${namespace}' in ${cluster}${NC}"
+}
+
+# Function to set namespace within cluster
+set_ns() {
+    local namespace=$1
+
+    if kubectl get namespace "${namespace}" > /dev/null 2>&1; then
+        kubectl config set-context --current --namespace="${namespace}"
+        echo -e "${GREEN}Namespace has been set to '${namespace}'${NC}"
+    else
+        echo -e "${RED}No such namespace '${namespace}' in this cluster.${NC}"
+    fi
 }
 
 # Function to show current namespace
@@ -44,14 +57,26 @@ show_current_namespace() {
 # Function to show help
 show_help() {
   local SELF="ns"
+  if [[ "$(basename "$0")" == kubectl-* ]]; then # invoked as plugin
+    SELF="kubectl ns"
+  fi
   cat <<EOF
-
-	USAGE:
-	   $SELF                    : Set namespace across cluster
-	   $SELF -c,--current       : Show current namespace
-	   $SELF -h,--help          : Show help
+        ns: A dynamic Bash script enabling seamless navigation across Kubernetes namespaces and clusters interactively.
+        USAGE:
+           $SELF                    : Set namespace across multiple cluster
+	   $SELF <NAME>             : Set namespace with cluster
+           $SELF -c,--current       : Show current namespace
+           $SELF -h,--help          : Show help
 
 EOF
+}
+
+# Check if the input is a number
+if_number(){
+  if ! [[ $1 =~ ^[0-9]+$ ]]; then
+    echo "Error: Input must be a number."
+    exit 1
+  fi
 }
 
 # Main script
@@ -68,7 +93,7 @@ while (( "$#" )); do
       ;;
     -h|--help)
       show_help
-	  exit 1
+      exit 1
       ;;
     -|.) # end argument parsing
       shift
@@ -78,6 +103,10 @@ while (( "$#" )); do
       echo "Error: Unsupported flag $1" >&2
       exit 1
       ;;
+	*)
+      set_ns "$1"
+      exit 1
+      ;;
   esac
 done
 
@@ -85,11 +114,13 @@ if (( "$#" == 0 )); then
   list_clusters
   read -rp "Enter the number of the cluster to be set: " cluster_number
   cluster_number=${cluster_number:-1}
+  if_number "${cluster_number}"
   cluster=$(kubectl config get-contexts -o name | sed -n "${cluster_number}p")
 
   list_namespaces "${cluster}"
   read -rp "Enter the number of the namespace to be set: " namespace_number
   namespace_number=${namespace_number:-1}
+  if_number "${namespace_number}"
   namespace=$(kubectl get namespaces -o jsonpath='{.items[*].metadata.name}' | tr ' ' '\n' | sed -n "${namespace_number}p")
 
   set_namespace "${cluster}" "${namespace}"
