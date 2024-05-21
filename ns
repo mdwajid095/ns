@@ -7,6 +7,27 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+[[ -n $DEBUG ]] && set -x
+set -eou pipefail
+
+# Function to show help
+show_help() {
+  local SELF="ns"
+  #local SELF_CMD="$0"
+  if [[ "$(basename "$0")" == kubectl-* ]]; then # invoked as plugin
+    SELF="kubectl ns"
+  fi
+  cat <<EOF
+        ns: A dynamic Bash script enabling seamless navigation across Kubernetes namespaces and clusters interactively.
+        USAGE:
+           $SELF                    : Set namespace across multiple cluster
+	   $SELF <NAME>             : Set namespace within cluster
+           $SELF -c,--current       : Show current namespace
+           $SELF -h,--help          : Show help
+
+EOF
+}
+
 # Function to list clusters
 list_clusters() {
     echo -e "${GREEN}Clusters in VM $(hostname -i):${NC}"
@@ -27,10 +48,7 @@ set_namespace() {
     local cluster=$1
     local namespace=$2
 
-    # Set the context to the desired cluster
     kubectl config use-context "${cluster}"
-
-    # Set the namespace
     kubectl config set-context --current --namespace="${namespace}"
 
     echo -e "${RED}Namespace has been set to '${namespace}' in ${cluster}${NC}"
@@ -52,23 +70,6 @@ set_ns() {
 show_current_namespace() {
     current_ns=$(kubectl config view --minify --output 'jsonpath={..namespace}')
     echo -e "${GREEN}Current namespace is ${current_ns} ${NC}"
-}
-
-# Function to show help
-show_help() {
-  local SELF="ns"
-  if [[ "$(basename "$0")" == kubectl-* ]]; then # invoked as plugin
-    SELF="kubectl ns"
-  fi
-  cat <<EOF
-        ns: A dynamic Bash script enabling seamless navigation across Kubernetes namespaces and clusters interactively.
-        USAGE:
-           $SELF                    : Set namespace across multiple cluster
-	   $SELF <NAME>             : Set namespace with cluster
-           $SELF -c,--current       : Show current namespace
-           $SELF -h,--help          : Show help
-
-EOF
 }
 
 # Check if the input is a number
