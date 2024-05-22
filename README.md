@@ -22,7 +22,7 @@ source ~/.bashrc
 ```bash
 $ ns -h
 ```
-![image](https://github.com/mdwajid095/ns/assets/55093597/772a8825-e466-47f2-a9c6-fbc1de17aa85)
+![image](https://github.com/mdwajid095/ns/assets/55093597/c1ce637b-a805-41c4-85e9-7c74dafcb69e)
 
 ```bash
 $ ns wowsome
