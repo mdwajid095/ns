@@ -43,7 +43,7 @@ list_clusters() {
 list_namespaces() {
     local cluster=$1
 
-	if [ "${cluster}" == "-a" ] || [ "${cluster}" == "--all" ]; then
+    if [ "${cluster}" == "-a" ] || [ "${cluster}" == "--all" ]; then
         cluster=$(kubectl config current-context)
     fi
 
@@ -58,25 +58,22 @@ set_namespace() {
     local cluster=$1
     local namespace=$2
 
-	# Check if the namespace exists in the cluster
+    kubectl config use-context "${cluster}"
     if ! kubectl get namespace "${namespace}" > /dev/null 2>&1; then
         echo -e "${RED}Provided namespace does not exist in the cluster '${cluster}'${NC}"
 		print_instruction
         return 1
     fi
-
-    kubectl config use-context "${cluster}"
     kubectl config set-context --current --namespace="${namespace}"
 
     echo -e "${GREEN}Namespace has been set to '${namespace}' in ${cluster}${NC}"
-	echo "${cluster}:${namespace}" >> ~/.namespace_history
-	tail -n 10 ~/.namespace_history > temp_file && mv temp_file ~/.namespace_history
+    echo "${cluster}:${namespace}" >> ~/.namespace_history && tail -n 10 ~/.namespace_history > temp_file && mv temp_file ~/.namespace_history
 }
 
 # Function to set namespace within cluster
 set_ns() {
     local namespace=$1
-	local cluster
+    local cluster
 
     if kubectl get namespace "${namespace}" > /dev/null 2>&1; then
         kubectl config set-context --current --namespace="${namespace}"
@@ -86,8 +83,7 @@ set_ns() {
         print_instruction
     fi
 	cluster=$(kubectl config current-context)
-	echo "${cluster}:${namespace}" >> ~/.namespace_history
-	tail -n 10 ~/.namespace_history > temp_file && mv temp_file ~/.namespace_history
+	echo "${cluster}:${namespace}" >> ~/.namespace_history && tail -n 10 ~/.namespace_history > temp_file && mv temp_file ~/.namespace_history
 }
 
 # Function to show current namespace
@@ -99,7 +95,7 @@ show_current_namespace() {
 # Function to switch back to previous ns
 switch_back() {
     local last_namespace
-	last_namespace=$(tail -n 2 ~/.namespace_history | head -n 1)
+    last_namespace=$(tail -n 2 ~/.namespace_history | head -n 1)
     local cluster=${last_namespace%:*}
     local namespace=${last_namespace#*:}
 
@@ -112,7 +108,7 @@ show_namespace_history() {
 }
 
 print_instruction(){
-echo -e "${YELLOW}Execute for help: ns -h ${NC}"
+    echo -e "${YELLOW}Execute for help: ns -h ${NC}"
 }
 
 # Check if the input is a number
@@ -150,15 +146,15 @@ while (( "$#" )); do
       show_current_namespace
       exit 1
       ;;
-	-a|--all)
+    -a|--all)
       list_namespaces "$1"
       exit 1
       ;;
-	-|-b|--back|.)
+    -|-b|--back|.)
       switch_back
       exit 1
       ;;
-	-x|--history)
+    -x|--history)
       show_namespace_history
       exit 1
       ;;
